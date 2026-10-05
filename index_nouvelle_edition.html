@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#071b12">
+<title>Football Career Guinea — Nouvelle édition</title>
+<style>
+:root{--bg:#06130d;--panel:#0d251a;--panel2:#123322;--line:#24533d;--text:#eff8f3;--muted:#9db6aa;--green:#19b875;--gold:#d6a52d;--red:#a94444}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#06130d,#081a12);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+main{max-width:980px;margin:auto;padding:12px}.top{position:sticky;top:0;z-index:10;background:#071b13f2;backdrop-filter:blur(12px);border-bottom:1px solid var(--line);padding:12px 0}
+h1,h2,h3,p{margin-top:0}.muted{color:var(--muted)}.hero,.panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px;margin:10px 0;box-shadow:0 8px 30px #0004}
+.hero{background:linear-gradient(135deg,#0b3825,#10291f)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:9px}.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
+button,input,select{font:inherit}button{border:0;border-radius:11px;padding:11px 13px;margin:3px;background:var(--green);color:white;font-weight:750;cursor:pointer}button.alt{background:#294238}button.gold{background:#9a7019}button.red{background:var(--red)}
+input,select{width:100%;padding:11px;border-radius:10px;border:1px solid #315943;background:#091912;color:#fff}
+.nav{display:flex;gap:5px;overflow:auto;padding:7px 0}.nav button{white-space:nowrap}
+.stat{font-size:23px;font-weight:800}.bar{height:7px;background:#243b31;border-radius:9px;overflow:hidden}.bar span{display:block;height:100%;background:#36ca8c}
+.choice{display:block;width:100%;text-align:left;background:#153b2b;margin:7px 0}.small{font-size:13px}.good{color:#5ce09f}.goldtxt{color:#f2ca6b}.danger{color:#ff9b87}
+table{width:100%;border-collapse:collapse}td,th{padding:7px;border-bottom:1px solid #244536;text-align:left}
+</style>
+</head>
+<body>
+<main>
+<header class="top">
+<h1>⚽ Football Career Guinea</h1>
+<div id="status" class="muted">Nouvelle édition · simulation de carrière et de vie</div>
+<nav id="nav" class="nav" hidden></nav>
+</header>
+<section id="app"></section>
+</main>
+
+<script>
+"use strict";
+
+const COUNTRIES=["Guinée","France","Angleterre","Espagne","Allemagne","Italie","Belgique","Portugal","Pays-Bas","Turquie","Maroc","Arabie saoudite","Émirats arabes unis","Qatar","États-Unis","Canada","Suisse","Autriche","Ghana","Nigeria","Cameroun","Afrique du Sud","Égypte"];
+const CLUBS={
+"Guinée":["AS Villa de Labé","Hafia FC","Horoya AC","SOAR Académie","Wakriya AC"],
+"France":["Paris FC","Olympique Lyonnais","Olympique de Marseille","Paris SG","Lille OSC"],
+"Angleterre":["Arsenal","Manchester City","Liverpool","Manchester United","Chelsea"],
+"Espagne":["Real Madrid","FC Barcelona","Atlético Madrid","Sevilla FC","Valencia CF"],
+"Allemagne":["Bayern Munich","Borussia Dortmund","RB Leipzig","Bayer Leverkusen"],
+"Italie":["AC Milan","Inter Milan","Juventus","AS Roma","Napoli"],
+"Belgique":["Club Brugge","Anderlecht","Genk"],"Portugal":["Benfica","FC Porto","Sporting CP"],
+"Pays-Bas":["Ajax","PSV","Feyenoord"],"Turquie":["Galatasaray","Fenerbahçe","Beşiktaş"],
+"Maroc":["Wydad","Raja Casablanca","FAR Rabat"],"Arabie saoudite":["Al Hilal","Al Nassr","Al Ittihad","Al Ahli"],
+"Émirats arabes unis":["Al Ain","Shabab Al Ahli"],"Qatar":["Al Sadd","Al Duhail"],
+"États-Unis":["LA Galaxy","Inter Miami","Seattle Sounders"],"Canada":["Toronto FC","CF Montréal","Vancouver Whitecaps"],
+"Suisse":["Young Boys","FC Basel"],"Autriche":["RB Salzburg","Rapid Wien"],
+"Ghana":["Hearts of Oak","Asante Kotoko"],"Nigeria":["Enyimba","Rangers"],
+"Cameroun":["Coton Sport","Canon Yaoundé"],"Afrique du Sud":["Mamelodi Sundowns","Kaizer Chiefs"],
+"Égypte":["Al Ahly","Zamalek"]
+};
+
+let S=load();
+
+function load(){try{const x=localStorage.getItem("FCG_NEW_EDITION");return x?JSON.parse(x):null}catch(e){return null}}
+function save(){localStorage.setItem("FCG_NEW_EDITION",JSON.stringify(S))}
+function r(a,b){return Math.floor(Math.random()*(b-a+1))+a}
+function cap(x,a=0,b=100){return Math.max(a,Math.min(b,Math.round(x)))}
+function money(x){return Math.round(x).toLocaleString("fr-FR")+" GNF"}
+function overall(){return Math.round((S.tech+S.speed+S.finish+S.vision+S.phys+S.mental)/6)}
+function stage(){if(S.age<=8)return"Enfance";if(S.age<=12)return"Académie";if(S.age<=15)return"Détection";if(S.age<=17)return"Formation";if(S.age<=23)return"Début professionnel";if(S.age<=34)return"Carrière";return"Après-carrière"}
+
+function newGame(){
+ const name=(document.getElementById("name").value||"Le Jeune").trim();
+ S={name,age:6,season:1,position:document.getElementById("position").value,foot:document.getElementById("foot").value,
+ country:"Guinée",club:"Terrain de quartier",academy:"Quartier de Labé",money:0,bank:0,
+ energy:90,family:60,school:78,coach:45,rep:2,fans:0,agent:0,team:45,
+ tech:32,speed:44,finish:30,vision:25,phys:38,mental:30,lead:20,
+ matches:0,goals:0,assists:0,wins:0,trophies:0,caps:0,ntgoals:0,
+ cars:[],houses:[],businesses:[],relationship:"Célibataire",offers:[],history:[],
+ sceneDone:{}, retired:false};
+ save();render("home");
+}
+
+function start(){
+ document.getElementById("nav").hidden=true;
+ document.getElementById("status").textContent="Nouvelle édition · commence à 6 ans à Labé";
+ document.getElementById("app").innerHTML=`
+ <div class="hero"><h2>Une carrière. Une vie. Une histoire.</h2>
+ <p>Tu commences à <b>6 ans à Labé</b>. Ici, le temps avance uniquement lorsqu'une vraie action ou une fin de saison le demande.</p></div>
+ <div class="panel"><h2>Créer ton joueur</h2>
+ <input id="name" placeholder="Nom du joueur">
+ <div class="grid2">
+ <div><label>Poste</label><select id="position"><option>Avant-centre</option><option>Ailier gauche</option><option>Ailier droit</option><option>Milieu</option><option>Défenseur</option></select></div>
+ <div><label>Pied</label><select id="foot"><option>Gaucher</option><option>Droitier</option></select></div>
+ </div>
+ <button onclick="newGame()">Commencer l'histoire</button></div>`;
+}
+
+function setupNav(){
+ const items=[["home","Accueil"],["career","Carrière"],["match","Match"],["life","Vie"],["world","Monde"],["savepage","Sauvegarde"]];
+ const nav=document.getElementById("nav");nav.hidden=false;
+ nav.innerHTML=items.map(([id,label])=>`<button class="alt" onclick="render('${id}')">${label}</button>`).join("");
+ document.getElementById("status").textContent=`${S.name} · ${S.age} ans · ${S.club} · ${S.country} · ${stage()}`;
+}
+
+function render(page){
+ if(!S){start();return}
+ setupNav();
+ const a=document.getElementById("app");
+ if(page==="home")a.innerHTML=home();
+ if(page==="career")a.innerHTML=career();
+ if(page==="match")a.innerHTML=matchPage();
+ if(page==="life")a.innerHTML=life();
+ if(page==="world")a.innerHTML=world();
+ if(page==="savepage")a.innerHTML=savePage();
+}
+
+function home(){
+ return `<div class="hero"><h2>${S.age<18?"🌱 Le rêve commence":"🏟️ La carrière continue"}</h2><p>${story()}</p></div>
+ ${currentScene()}
+ <div class="grid">
+ ${stat("Technique",S.tech)}${stat("Vitesse",S.speed)}${stat("Finition",S.finish)}${stat("Vision",S.vision)}
+ ${stat("Physique",S.phys)}${stat("Mental",S.mental)}${stat("Leadership",S.lead)}${stat("École",S.school)}
+ </div>
+ <div class="panel"><b>État</b><p>Énergie ${S.energy} · Famille ${S.family} · Coach ${S.coach} · Réputation ${S.rep} · Fans ${S.fans}</p>
+ <p>Saison ${S.season} · Matchs cette saison ${S.matches}/15 · ⚽ ${S.goals} · 🎯 ${S.assists} · 🏆 ${S.trophies} · 🇬🇳 Sélections ${S.caps}</p></div>`;
+}
+function stat(n,v){return `<div class="panel"><b>${n}</b><div class="stat">${cap(v)}</div><div class="bar"><span style="width:${cap(v)}%"></span></div></div>`}
+function story(){
+ if(S.age<=8)return"Tes parents veulent que tu réussisses à l'école. Le football doit rester accompagné de discipline.";
+ if(S.age<=12)return"Les tournois de quartier et les académies commencent à attirer les regards.";
+ if(S.age<=15)return"Les détections et les essais deviennent importants. Tes performances construisent ta réputation.";
+ if(S.age<=17)return"Tu approches du football senior. Chaque entraînement et chaque match compte.";
+ if(S.age<=23)return"Contrats, transferts, agent, sélection nationale, médias et pression entrent dans ta vie.";
+ if(S.age<=34)return"Tu dois gérer performances, argent, famille, réputation, contrats et projets.";
+ return"Ta carrière de joueur touche à sa fin. Une nouvelle vie peut commencer.";
+}
+
+function currentScene(){
+ let key=S.age+"-"+S.season;
+ if(S.sceneDone[key])return `<div class="panel"><b>📅 Aujourd'hui</b><p>La journée est calme. Choisis une activité pour continuer.</p>
+ <button onclick="train()">Entraînement</button><button onclick="rest()">Repos</button><button onclick="doMatch()">Match</button></div>`;
+
+ if(S.age===6)return scene6();
+ if(S.age===7)return simpleYouthScene("Le quartier organise un petit tournoi. Ton entraîneur veut voir ton comportement.",["Jouer collectif","Prendre des initiatives","Écouter le coach"],[()=>{S.team+=6;S.vision+=3},()=>{S.rep+=5;S.tech+=3},()=>{S.coach+=7;S.mental+=2}]);
+ if(S.age===8)return simpleYouthScene("Une académie de Labé te propose de venir observer un entraînement.",["Accepter sérieusement","Rester avec le quartier","Demander à tes parents"],[()=>{S.academy="Académie de Labé";S.club="Académie de Labé";S.coach+=8},()=>{S.rep+=3;S.tech+=4},()=>{S.family+=8;S.coach+=4}]);
+ if(S.age===10)return simpleYouthScene("Ton équipe participe à une compétition inter-académies.",["Jouer pour l'équipe","Chercher à marquer","Rester concentré"],[()=>{S.team+=8;S.assists+=1},()=>{S.finish+=6;S.rep+=7},()=>{S.mental+=6}]);
+ if(S.age===12)return simpleYouthScene("Un recruteur observe le match depuis les tribunes.",["Jouer simple","Montrer tes qualités","Suivre le plan du coach"],[()=>{S.vision+=6;S.rep+=4},()=>{S.tech+=5;S.speed+=3;S.rep+=8},()=>{S.coach+=8;S.team+=4}]);
+ if(S.age===15)return trialScene();
+ return `<div class="panel"><b>📅 Nouvelle saison</b><p>Ton parcours continue. Choisis une activité pour écrire la suite.</p>
+ <button onclick="train()">Entraînement</button><button onclick="rest()">Repos</button><button onclick="doMatch()">Match</button></div>`;
+}
+
+function scene6(){
+ return `<div class="panel"><h3>👦 6 ans — Une conversation importante</h3>
+ <p>Tes parents s'assoient avec toi. Ils veulent que tu prennes l'école au sérieux, même si tu rêves déjà de football.</p>
+ <button class="choice" onclick="choose6(0)">« Je veux devenir footballeur professionnel. »</button>
+ <button class="choice" onclick="choose6(1)">« Je vais essayer de faire les deux. »</button>
+ <button class="choice" onclick="choose6(2)">« Je ne sais pas encore. »</button></div>`;
+}
+function choose6(i){
+ if(i===0){S.family-=2;S.mental+=5}
+ if(i===1){S.school+=5;S.family+=5}
+ if(i===2){S.family+=2;S.coach+=3}
+ S.sceneDone["6-"+S.season]=true;save();render("home");
+}
+function simpleYouthScene(text,labels,effects){
+ return `<div class="panel"><h3>📖 Événement</h3><p>${text}</p>${labels.map((x,i)=>`<button class="choice" onclick="sceneChoice(${i})">${x}</button>`).join("")}</div>`;
+}
+function sceneChoice(i){
+ let key=S.age+"-"+S.season;
+ const maps={
+ "7-1":[()=>{S.team+=6;S.vision+=3},()=>{S.rep+=5;S.tech+=3},()=>{S.coach+=7;S.mental+=2}],
+ };
+ let fn=maps[key]?.[i];
+ if(fn)fn();
+ S.sceneDone[key]=true;save();render("home");
+}
+function trialScene(){
+ return `<div class="panel"><h3>✈️ 15 ans — Une détection</h3><p>Une opportunité d'essai arrive. Ton niveau, ta réputation et ton comportement seront observés.</p>
+ <button onclick="trial(true)">Accepter l'essai</button><button class="alt" onclick="trial(false)">Continuer à travailler localement</button></div>`;
+}
+function trial(accept){
+ if(accept){
+  let chance=overall()+S.rep+r(0,35);
+  if(chance>125){let c=COUNTRIES[r(0,4)],club=CLUBS[c][r(0,CLUBS[c].length-1)];S.country=c;S.club=club;S.rep+=15;S.agent+=5;alert("🎫 Essai réussi : "+club+" ("+c+").")}
+  else{S.mental+=4;alert("L'essai n'est pas encore concluant. Le staff demande davantage de travail.")}
+ }else{S.tech+=3;S.mental+=4;S.coach+=5}
+ S.sceneDone[S.age+"-"+S.season]=true;save();render("home");
+}
+
+function train(){
+ if(S.energy<25){alert("Tu es trop fatigué. Repose-toi.");return}
+ S.energy-=18;S.tech+=r(1,4);S.speed+=r(0,3);S.finish+=r(1,4);S.vision+=r(0,3);S.phys+=r(1,3);S.mental+=r(0,2);S.coach+=2;
+ save();afterAction();
+}
+function rest(){S.energy=cap(S.energy+30);S.mental+=1;if(S.injury)S.injury--;save();afterAction()}
+function doMatch(){
+ if(S.energy<30){alert("Tu manques d'énergie pour jouer.");return}
+ S.energy-=30;S.matches++;
+ let strength=overall()+S.coach*.15+S.team*.15+r(-18,18),opp=r(55,92);
+ if(strength>opp){
+  S.wins++;let g=Math.random()<.35?2:1;S.goals+=g;S.rep+=r(3,8);S.fans+=r(2,7);S.team+=3;
+  if(Math.random()<.12)S.trophies++;
+  alert("🏆 Victoire ! Tu as marqué "+g+" but(s).");
+ }else{S.rep=Math.max(0,S.rep-1);S.team+=1;alert("Match difficile. Continue à progresser.")}
+ if(S.age>=17&&S.country==="Guinée"&&Math.random()<.18){S.caps++;S.rep+=5;alert("🇬🇳 Convocation en sélection nationale !")}
+ save();afterAction();
+}
+function afterAction(){
+ if(S.matches>=15){endSeason();return}
+ render("home");
+}
+function endSeason(){
+ S.season++;S.age++;S.matches=0;S.energy=90;S.school=cap(S.school);
+ S.sceneDone={};
+ if(S.age===8){S.academy="Académie de Labé";S.club="Académie de Labé";S.rep+=5}
+ if(S.age===12){S.rep+=10;alert("🔎 De nouveaux recruteurs commencent à suivre ton parcours.")}
+ if(S.age===16 && overall()>55){S.club=CLUBS["Guinée"][r(1,4)];S.rep+=12}
+ if(S.age===18){S.contract={club:S.club,salary:2500000,duration:2};S.money+=2500000;S.agent+=8;alert("📝 Premier contrat professionnel !")}
+ save();render("home");
+}
+
+function career(){
+ const offers=S.offers.map((o,i)=>`<div class="panel"><b>${o.club}</b><p>${o.country} · valeur ${money(o.value)}</p><button onclick="acceptOffer(${i})">Signer</button><button class="alt" onclick="S.offers.splice(${i},1);save();render('career')">Refuser</button></div>`).join("");
+ return `<div class="panel"><h2>📈 Carrière</h2><p><b>${S.club}</b> · ${S.country} · Niveau général ${overall()}</p>
+ <p>Réputation ${S.rep} · Fans ${S.fans} · Buts ${S.goals} · Passes ${S.assists} · Trophées ${S.trophies}</p>
+ <p>Contrat : ${S.contract?S.contract.duration+" saison(s), "+money(S.contract.salary)+"/mois":"aucun"}</p></div>
+ <div class="panel"><h3>🌍 Rechercher une opportunité</h3><div class="grid">${COUNTRIES.map(c=>`<button class="alt" onclick="seek('${c}')">${c}</button>`).join("")}</div></div>
+ ${offers||'<div class="panel muted">Aucune offre en attente.</div>'}`;
+}
+function seek(c){
+ if(S.age<14){alert("Attends encore quelques années avant les grandes opportunités.");return}
+ const list=CLUBS[c]||["Club partenaire"],club=list[r(0,list.length-1)],difficulty=r(80,180);
+ if(overall()+S.rep>difficulty){S.offers.push({country:c,club,value:r(1000000,40000000)});alert("📨 Une opportunité est arrivée.");}
+ else alert("Les recruteurs demandent encore plus de niveau ou de réputation.");
+ save();render("career");
+}
+function acceptOffer(i){const o=S.offers[i];S.country=o.country;S.club=o.club;S.money+=o.value;S.rep+=10;S.agent+=2;S.contract={club:o.club,duration:r(1,5),salary:Math.floor(o.value/20)};S.offers.splice(i,1);save();alert("✍️ Contrat signé !");render("career")}
+
+function matchPage(){return `<div class="hero"><h2>🏟️ Jour de match</h2><p>${S.club} · ${S.country}</p><p>Énergie ${S.energy} · Matchs de la saison ${S.matches}/15</p><button onclick="doMatch()">JOUER</button></div><div class="panel"><button onclick="train()">Entraînement léger</button><button onclick="rest()">Récupération</button></div>`}
+
+function life(){
+ return `<div class="panel"><h2>🏠 Vie du joueur</h2><p>💰 ${money(S.money)} · 🏦 ${money(S.bank)} · ❤️ ${S.relationship}</p>
+ <p>🚗 ${S.cars.length} voiture(s) · 🏡 ${S.houses.length} logement(s) · 🏪 ${S.businesses.length} entreprise(s)</p></div>
+ <div class="grid2"><div class="panel"><h3>Famille</h3><button onclick="helpFamily()">Aider la famille</button></div>
+ <div class="panel"><h3>Patrimoine</h3><button onclick="buyCar()">Acheter une voiture</button><button onclick="buyHouse()">Acheter un logement</button><button onclick="createBusiness()">Créer une entreprise</button><button onclick="deposit()">Banque</button></div>
+ <div class="panel"><h3>Relations</h3><button onclick="relationship()">Gérer ma vie sociale</button></div></div>`;
+}
+function helpFamily(){let n=r(200000,1000000);if(S.money<n){alert("Pas assez d'argent.");return}S.money-=n;S.family+=8;save();render("life")}
+function buyCar(){if(S.age<18){alert("Cette action se débloque à l'âge adulte.");return}let p=r(1500000,12000000);if(S.money<p){alert("Pas assez d'argent.");return}S.money-=p;S.cars.push("Voiture");save();render("life")}
+function buyHouse(){if(S.age<18){alert("Cette action se débloque à l'âge adulte.");return}let p=r(8000000,60000000);if(S.money<p){alert("Pas assez d'argent.");return}S.money-=p;S.houses.push("Logement");S.rep+=3;save();render("life")}
+function createBusiness(){if(S.age<18){alert("Les entreprises sont disponibles à l'âge adulte.");return}let p=r(1000000,10000000);if(S.money<p){alert("Capital insuffisant.");return}S.money-=p;S.businesses.push({name:"Entreprise",profit:0});save();render("life")}
+function deposit(){let n=Number(prompt("Montant à placer en banque","1000000"));if(n>0&&n<=S.money){S.money-=n;S.bank+=n;save()}render("life")}
+function relationship(){if(S.age<13){alert("Pour l'instant, tu gères surtout famille, école et amitiés.");return}S.relationship=S.relationship==="Célibataire"?"En couple":"Marié";S.mental+=3;save();render("life")}
+
+function world(){return `<div class="panel"><h2>🌍 Monde du football</h2><p>Explore les pays et cherche des opportunités selon ton niveau.</p></div>${COUNTRIES.map(c=>`<div class="panel"><b>${c}</b><p>${(CLUBS[c]||[]).join(" · ")}</p><button onclick="seek('${c}')">Rechercher</button></div>`).join("")}`}
+function savePage(){return `<div class="panel"><h2>💾 Sauvegarde</h2><p>Cette version utilise une sauvegarde locale indépendante de l'ancien jeu.</p><button onclick="save();alert('Sauvegarde effectuée.')">Sauvegarder</button><button onclick="exportSave()">Exporter</button><button onclick="importSave()">Importer</button><button class="red" onclick="resetGame()">Nouvelle partie</button></div>`}
+function exportSave(){const blob=new Blob([JSON.stringify(S)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="football-career-guinea-save.json";a.click();URL.revokeObjectURL(url)}
+function importSave(){const i=document.createElement("input");i.type="file";i.accept=".json";i.onchange=()=>{const f=i.files[0],reader=new FileReader();reader.onload=()=>{try{S=JSON.parse(reader.result);save();render("home")}catch(e){alert("Fichier invalide.")}};reader.readAsText(f)};i.click()}
+function resetGame(){if(confirm("Effacer cette nouvelle carrière ?")){localStorage.removeItem("FCG_NEW_EDITION");S=null;start()}}
+
+if(S)render("home");else start();
+</script>
+</body>
+</html>
